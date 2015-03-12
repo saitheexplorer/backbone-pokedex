@@ -13,20 +13,16 @@
     </head>
 
     <script charset="utf-8">
-        var pokemon = [{
-            name: 'bulbasaur'
-        },{
-            name: 'charmander'
-        },{
-            name: 'squirtle'
-        },{
-            name: 'mewtwo'
-        }];
-
-        var Pokemon = Backbone.Model.extend();
+        var Pokemon = Backbone.Model.extend({
+            idAttribute: 'resource_uri'
+        });
 
         var Pokedex = Backbone.Collection.extend({
-            model: Pokemon
+            model: Pokemon,
+
+            comparator: function (model) {
+                return parseInt(model.get('resource_uri').split('/')[3]);
+            }
         });
 
         var PokedexRow = Backbone.View.extend({
@@ -63,10 +59,22 @@
         });
 
         $(document).ready(function () {
-            new PokedexView({collection: new Pokedex(pokemon)});
+            $.ajax({
+                url: 'http://pokeapi.co/api/v1/pokedex/1/',
+                method: 'GET',
+                dataType: 'json',
+                success: function (response) {
+                    new PokedexView({collection: new Pokedex(response.pokemon)});
+                }
+            });
         });
     </script>
 
     <body>
+        <div class="row">
+            <div class="small-2 columns" id="sidebar"></div>
+            <div class="small-10 columns"></div>
+        </div>
+        Loading...
     </body>
 </html>
