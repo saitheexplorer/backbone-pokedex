@@ -29,23 +29,31 @@
             model: Pokemon
         });
 
-        var PokedexView = Backbone.View.extend({
-            id: 'pokedex',
+        var PokedexRow = Backbone.View.extend({
+            el: '#pokedex',
 
             template: '<p><%= name %></p>',
 
             render: function () {
-                var template = this.template;
+                var html = _.template(this.template, this.model.toJSON());
+                this.$el.append(html);
+                return this;
+            },
 
+            initialize: function () {
+                this.render();
+            }
+        });
+
+        var PokedexView = Backbone.View.extend({
+            id: 'pokedex',
+
+            render: function () {
                 $(document.body).html(this.el);
 
                 _.each(this.collection.models, function (val) {
-                    var html = _.template(template, val.toJSON());
-
-                    $(document.body).append(html);
-
+                    new PokedexRow({model: val});
                 });
-
                 return this;
             },
 
