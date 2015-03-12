@@ -24,6 +24,10 @@
         }];
 
         var Pokemon = Backbone.Model.extend();
+
+        var Pokedex = Backbone.Collection.extend({
+            model: Pokemon
+        });
     </script>
 
     <body>
