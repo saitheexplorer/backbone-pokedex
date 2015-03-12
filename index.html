@@ -28,6 +28,35 @@
         var Pokedex = Backbone.Collection.extend({
             model: Pokemon
         });
+
+        var PokedexView = Backbone.View.extend({
+            id: 'pokedex',
+
+            template: '<p><%= name %></p>',
+
+            render: function () {
+                var template = this.template;
+
+                $(document.body).html(this.el);
+
+                _.each(this.collection.models, function (val) {
+                    var html = _.template(template, val.toJSON());
+
+                    $(document.body).append(html);
+
+                });
+
+                return this;
+            },
+
+            initialize: function () {
+                this.render();
+            }
+        });
+
+        $(document).ready(function () {
+            new PokedexView({collection: new Pokedex(pokemon)});
+        });
     </script>
 
     <body>
