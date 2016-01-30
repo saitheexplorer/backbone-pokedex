@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title></title>
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.0/backbone-min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/foundation/5.5.1/css/foundation.min.css">
+  </head>
+
+  <script charset="utf-8">
+    var API_URL = 'http://pokeapi.co';
+
+    var App = {
+      Models: {},
+      Collections: {},
+      Views: {}
+    };
+
+    App.Models.Pokemon = Backbone.Model.extend({
+      API_URL: API_URL
+    });
+
+    App.Collections.Pokedex = Backbone.Collection.extend({
+      model: App.Models.Pokemon,
+
+      comparator: function (model) {
+        return parseInt(model.get('resource_uri').split('/')[3]);
+      }
+    });
+
+    App.Views.Pokemon = Backbone.View.extend({
+      template: '#pokedex-row',
+
+      className: 'row',
+
+      render: function () {
+        var html = _.template($(this.template).html(), this.model.toJSON());
+        this.$el.html(html);
+        return this;
+      },
+
+      initialize: function () {
+        this.render();
+      },
+
+      events: {
+        'click': 'showDetail'
+      },
+
+      showDetail: function () {
+        $.get(API_URL + '/' + this.model.get('resource_uri')).then(function (response) {
+          if (!response.sprites.length) {
+            response.image = '';
+            return response;
+          }
+
+          return $.get(API_URL + response.sprites[0].resource_uri).then(function (sprites) {
+            response.image = sprites.image;
+            return response;
+          });
+        }).then(function (response) {
+          new App.Views.PokemonDetail({model: new App.Models.Pokemon(response)});
+        });
+      }
+    });
+
+    App.Views.PokemonDetail = Backbone.View.extend({
+      template: '#pokemon-detail',
+
+      render: function () {
+        $('#content').html(_.template($(this.template).html(), this.model.toJSON()));
+      },
+
+      initialize: function () {
+        this.render();
+      }
+    });
+
+    App.Views.Pokedex = Backbone.View.extend({
+      render: function () {
+        this.collection.each(this.renderItem);
+      },
+
+      renderItem: function (model) {
+        var view = new App.Views.Pokemon({model: model});
+        $('#sidebar').append(view.el);
+      },
+
+      initialize: function () {
+        this.render();
+      }
+    });
+
+    App.Views.ProgressBar = Backbone.View.extend({
+      template: '#progress-bar',
+
+      render: function () {
+        var html = _.template($(this.template).html());
+        $(document.body).prepend(html);
+        return this;
+      },
+
+      initialize: function () {
+        this.render();
+        $('.meter').animate({width: '100%'}, 500);
+      }
+    });
+
+    App.Views.Container = Backbone.View.extend({
+      template: '#container',
+
+      render: function () {
+        var template = $(this.template).html();
+        var html = _.template(template);
+
+        $(document.body).html(html);
+
+        new App.Views.Pokedex({collection: this.collection});
+
+        return this;
+      },
+
+      initialize: function () {
+        this.render();
+      }
+    })
+
+    $(document).ready(function () {
+      var progressBar = new App.Views.ProgressBar();
+
+      $.get(API_URL + '/api/v1/pokedex/1/', function (response) {
+        new App.Views.Container({
+          collection: new App.Collections.Pokedex(response.pokemon)
+        });
+      });
+    });
+  </script>
+
+  <script type="text/template" id="pokedex-row">
+    <%= name %>
+  </script>
+
+  <script type="text/template" id="pokemon-detail">
+    <h1><%= name %></h1>
+    <img src="<%= API_URL %><%= image %>" alt="">
+    <p><%= _.pluck(types, 'name').join(', ') %></p>
+  </script>
+
+  <script type="text/template" id="container">
+    <div class="row">
+      <div class="small-2 columns" id="sidebar"></div>
+      <div class="small-10 columns" id="content"></div>
+    </div>
+  </script>
+
+  <script type="text/template" id="progress-bar">
+    <div class="row" style="padding-top:100px;">
+      <div class="progress small-12 radius">
+        <span class="meter" style="width:1%"></span>
+      </div>
+    </div>
+  </script>
+
+  <style type="text/css">
+    #sidebar {
+      height: 700px;
+      min-height: 100%;
+      overflow: scroll;
+    }
+  </style>
+
+  <body>
+  </body>
+</html>
