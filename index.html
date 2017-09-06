@@ -14,7 +14,7 @@
   </head>
 
   <script charset="utf-8">
-    var API_URL = 'http://pokeapi.co';
+    var API_URL = 'https://pokeapi.co/api/v2';
 
     var App = {
       Models: {},
@@ -30,7 +30,7 @@
       model: App.Models.Pokemon,
 
       comparator: function (model) {
-        return parseInt(model.get('resource_uri').split('/')[3]);
+        return model.get('entry_number');
       }
     });
 
@@ -54,17 +54,7 @@
       },
 
       showDetail: function () {
-        $.get(API_URL + '/' + this.model.get('resource_uri')).then(function (response) {
-          if (!response.sprites.length) {
-            response.image = '';
-            return response;
-          }
-
-          return $.get(API_URL + response.sprites[0].resource_uri).then(function (sprites) {
-            response.image = sprites.image;
-            return response;
-          });
-        }).then(function (response) {
+        $.get(API_URL + '/pokemon/' + this.model.get('entry_number')).then(function (response) {
           new App.Views.PokemonDetail({model: new App.Models.Pokemon(response)});
         });
       }
@@ -134,22 +124,22 @@
     $(document).ready(function () {
       var progressBar = new App.Views.ProgressBar();
 
-      $.get(API_URL + '/api/v1/pokedex/1/', function (response) {
+      $.get(API_URL + '/pokedex/2/', function (response) {
         new App.Views.Container({
-          collection: new App.Collections.Pokedex(response.pokemon)
+          collection: new App.Collections.Pokedex(response.pokemon_entries)
         });
       });
     });
   </script>
 
   <script type="text/template" id="pokedex-row">
-    <a href='#'><%= name %></a>
+    <a href='#'><%= pokemon_species.name %></a>
   </script>
 
   <script type="text/template" id="pokemon-detail">
     <h1><%= name %></h1>
-    <img src="<%= API_URL %><%= image %>" alt="">
-    <p><%= _.pluck(types, 'name').join(', ') %></p>
+    <img src="<%= sprites.front_default %>" alt="<%= name %>">
+    <p><%= _.pluck(_.pluck(types, 'type'), 'name').join(', ') %></p>
   </script>
 
   <script type="text/template" id="container">
